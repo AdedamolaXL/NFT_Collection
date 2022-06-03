@@ -30,13 +30,9 @@ export default function Home() {
       const signer = await getProviderOrSigner(true);
       // Create a new instance of the Contract with a Signer, which allows
       // update methods
-      const whitelistContract = new Contract(
-        NFT_CONTRACT_ADDRESS,
-        abi,
-        signer
-      );
+      const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, signer);
       // call the presaleMint from the contract, only whitelisted addresses would be able to mint
-      const tx = await whitelistContract.presaleMint({
+      const tx = await nftContract.presaleMint({
         // value signifies the cost of one crypto dev which is "0.01" eth.
         // We are parsing `0.01` string to ether using the utils library from ethers.js
         value: utils.parseEther("0.01"),
@@ -60,13 +56,9 @@ export default function Home() {
       const signer = await getProviderOrSigner(true);
       // Create a new instance of the Contract with a Signer, which allows
       // update methods
-      const whitelistContract = new Contract(
-        NFT_CONTRACT_ADDRESS,
-        abi,
-        signer
-      );
+      const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, signer);
       // call the mint from the contract to mint the Crypto Dev
-      const tx = await whitelistContract.mint({
+      const tx = await nftContract.mint({
         // value signifies the cost of one crypto dev which is "0.01" eth.
         // We are parsing `0.01` string to ether using the utils library from ethers.js
         value: utils.parseEther("0.01"),
@@ -82,8 +74,8 @@ export default function Home() {
   };
 
   /*
-      connectWallet: Connects the MetaMask wallet
-    */
+    connectWallet: Connects the MetaMask wallet
+  */
   const connectWallet = async () => {
     try {
       // Get the provider from web3Modal, which in our case is MetaMask
@@ -104,13 +96,9 @@ export default function Home() {
       const signer = await getProviderOrSigner(true);
       // Create a new instance of the Contract with a Signer, which allows
       // update methods
-      const whitelistContract = new Contract(
-        NFT_CONTRACT_ADDRESS,
-        abi,
-        signer
-      );
+      const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, signer);
       // call the startPresale from the contract
-      const tx = await whitelistContract.startPresale();
+      const tx = await nftContract.startPresale();
       setLoading(true);
       // wait for the transaction to get mined
       await tx.wait();
@@ -161,7 +149,7 @@ export default function Home() {
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, provider);
       // call the presaleEnded from the contract
       const _presaleEnded = await nftContract.presaleEnded();
-      // _presaleEnded is a Big Number, so we are using the lt(less than function) instead of `<`
+      // _presaleEnded is a Big Number, so we are using the lt(less than function) insteal of `<`
       // Date.now()/1000 returns the current time in seconds
       // We compare if the _presaleEnded timestamp is less than the current time
       // which means presale has ended
@@ -295,4 +283,96 @@ export default function Home() {
       }, 5 * 1000);
     }
   }, [walletConnected]);
+
+  /*
+    renderButton: Returns a button based on the state of the dapp
+  */
+  const renderButton = () => {
+    // If wallet is not connected, return a button which allows them to connect their wllet
+    if (!walletConnected) {
+      return (
+        <button onClick={connectWallet} className={styles.button}>
+          Connect your wallet
+        </button>
+      );
+    }
+
+    // If we are currently waiting for something, return a loading button
+    if (loading) {
+      return <button className={styles.button}>Loading...</button>;
+    }
+
+    // If connected user is the owner, and presale hasnt started yet, allow them to start the presale
+    if (isOwner && !presaleStarted) {
+      return (
+        <button className={styles.button} onClick={startPresale}>
+          Start Presale!
+        </button>
+      );
+    }
+
+    // If connected user is not the owner but presale hasn't started yet, tell them that
+    if (!presaleStarted) {
+      return (
+        <div>
+          <div className={styles.description}>Presale hasnt started!</div>
+        </div>
+      );
+    }
+
+    // If presale started, but hasn't ended yet, allow for minting during the presale period
+    if (presaleStarted && !presaleEnded) {
+      return (
+        <div>
+          <div className={styles.description}>
+            Presale has started!!! If your address is whitelisted, Mint a Crypto
+            Dev 🥳
+          </div>
+          <button className={styles.button} onClick={presaleMint}>
+            Presale Mint 🚀
+          </button>
+        </div>
+      );
+    }
+
+    // If presale started and has ended, its time for public minting
+    if (presaleStarted && presaleEnded) {
+      return (
+        <button className={styles.button} onClick={publicMint}>
+          Public Mint 🚀
+        </button>
+      );
+    }
+  };
+
+  return (
+    <div>
+      <Head>
+        <title>Crypto Devs</title>
+        <meta name="description" content="Whitelist-Dapp" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      <div className={styles.main}>
+        <div>
+          <h1 className={styles.title}>Welcome to Crypto Devs!</h1>
+          <div className={styles.description}>
+            Its an NFT collection for developers in Crypto.
+          </div>
+          <div className={styles.description}>
+            {tokenIdsMinted}/20 have been minted
+          </div>
+          {renderButton()}
+        </div>
+        <div>
+          <img className={styles.image} src="./cryptodevs/0.svg" />
+        </div>
+      </div>
+
+      <footer className={styles.footer}>
+        Made with &#10084; by Crypto Devs
+      </footer>
+    </div>
+  );
 }
+  
+
